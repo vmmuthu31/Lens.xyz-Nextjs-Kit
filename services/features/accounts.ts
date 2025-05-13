@@ -4,7 +4,7 @@ import {
   fetchAccount,
 } from "@lens-protocol/client/actions";
 import { uri, never, SessionClient, Context } from "@lens-protocol/client";
-import { storageClient } from "./storageClient";
+import { storageClient } from "../clients/storageClient";
 import { Signer } from "ethers";
 import { handleOperationWith } from "@lens-protocol/client/ethers";
 

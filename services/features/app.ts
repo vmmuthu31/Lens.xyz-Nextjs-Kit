@@ -1,5 +1,5 @@
 import { Platform, app } from "@lens-protocol/metadata";
-import { storageClient } from "./storageClient";
+import { storageClient } from "../clients/storageClient";
 
 export const createAndDeployApp = async ({
   name,

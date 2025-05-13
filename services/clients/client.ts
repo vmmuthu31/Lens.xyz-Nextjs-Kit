@@ -1,3 +1,4 @@
+import { Environments } from "@/utils/types";
 import {
   PublicClient,
   mainnet,
@@ -5,13 +6,6 @@ import {
   staging,
   EnvironmentConfig,
 } from "@lens-protocol/client";
-
-export enum Environments {
-  Production = "production",
-  Staging = "staging",
-  Mainnet = "mainnet",
-  Testnet = "testnet",
-}
 
 export const environments: Record<Environments, EnvironmentConfig> = {
   [Environments.Staging]: staging,
