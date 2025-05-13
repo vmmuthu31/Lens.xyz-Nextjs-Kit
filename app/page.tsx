@@ -14,7 +14,8 @@ import {
   getCurrentSession,
 } from "@/services/features/session";
 import { storage } from "@/services/features/storage";
-import { createUser } from "@/services/features/accounts";
+import { createUser, updateUser } from "@/services/features/accounts";
+import { MetadataAttributeType } from "@lens-protocol/metadata";
 
 export default function Home() {
   const { address } = useAccount();
@@ -24,32 +25,75 @@ export default function Home() {
     profileImage: "",
     coverImage: "",
   });
+  const [lensAccount, setLensAccount] = useState<{
+    __typename: string;
+    addedAt: string;
+    account: {
+      __typename: string;
+      address: string;
+      owner: string;
+      score: number;
+      createdAt: string;
+      username: {
+        __typename: string;
+        id: string;
+        value: string;
+        localName: string;
+        linkedTo: string;
+        ownedBy: string;
+        timestamp: string;
+        namespace: string;
+      };
+    };
+  } | null>(null);
 
   const fetchLensAccount = async () => {
     if (!address) {
       console.error("Address is undefined. Please connect your wallet.");
       return;
     }
+
     const accounts = await fetchAvailableAccounts(address);
-    console.log("Available Lens accounts:", accounts);
+
+    if (accounts && accounts.items && accounts.items.length > 0) {
+      const firstAccount = accounts.items[0];
+      setLensAccount({
+        __typename: firstAccount.__typename,
+        addedAt: firstAccount.addedAt.toString(),
+        account: {
+          __typename: firstAccount.account.__typename,
+          address: firstAccount.account.address.toString(),
+          owner: firstAccount.account.owner.toString(),
+          score: firstAccount.account.score,
+          createdAt: firstAccount.account.createdAt.toString(),
+          username: {
+            __typename: firstAccount.account.username?.__typename || "",
+            id: firstAccount.account.username?.id.toString(),
+            value: firstAccount.account.username?.value.toString(),
+            localName: firstAccount.account.username?.localName || "",
+            linkedTo: firstAccount.account.username?.linkedTo || "",
+            ownedBy: firstAccount.account.username?.ownedBy.toString(),
+            timestamp: firstAccount.account.username?.timestamp.toString(),
+            namespace: firstAccount.account.username?.namespace.toString(),
+          },
+        },
+      });
+    } else {
+      setLensAccount(null);
+    }
   };
 
   const getToken = () => {
     const token = storage.getItem("authToken");
-    console.log("Retrieved token:", token);
     return token;
   };
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      console.log("Token exists:", token);
-    }
-
+    getToken();
     fetchLensAccount();
   }, [address]);
 
-  const handleOnboard = async () => {
+  const handleOnboardOrUpdate = async () => {
     try {
       if (!window.ethereum || address === undefined) {
         alert("MetaMask is required to onboard.");
@@ -70,37 +114,52 @@ export default function Home() {
       }
 
       const currentSession = await getCurrentSession(sessionClient.value);
-      console.log("Current session:", currentSession);
-
-      console.log("Onboarding successful!", sessionClient);
       const appAddress = currentSession?.app;
       const challenge = await generateChallenge(address, {
         appAddress,
         role: LensAuthRole.ONBOARDING_USER,
       });
 
-      // Step 2: Sign Challenge
       const signature = await signer.signMessage(challenge.text);
 
-      // Step 3: Authenticate
       const tokens = await authenticateChallenge(challenge.id, signature);
       localStorage.setItem("authToken", tokens.accessToken);
-      console.log("Authentication successful:", tokens);
 
-      await createUser(
-        sessionClient.value,
-        signer,
-        formData.username,
-        formData.bio,
-        formData.profileImage,
-        formData.coverImage,
-        [
-          { key: "hobby", value: "coding" },
-          { key: "location", value: "Earth" },
-        ]
-      );
+      if (lensAccount) {
+        await updateUser(
+          formData.username || lensAccount.account.username.localName,
+          formData.bio || "",
+          formData.profileImage || "",
+          formData.coverImage || "",
+          [
+            {
+              key: "hobby",
+              value: "coding",
+              type: MetadataAttributeType.STRING,
+            },
+            {
+              key: "location",
+              value: "Earth",
+              type: MetadataAttributeType.STRING,
+            },
+          ]
+        );
+      } else {
+        await createUser(
+          sessionClient.value,
+          signer,
+          formData.username,
+          formData.bio,
+          formData.profileImage,
+          formData.coverImage,
+          [
+            { key: "hobby", value: "coding" },
+            { key: "location", value: "Earth" },
+          ]
+        );
+      }
     } catch (error) {
-      console.error("Onboarding failed:", error);
+      console.error("Onboarding or update failed:", error);
     }
   };
 
@@ -122,8 +181,21 @@ export default function Home() {
       <main className="flex flex-col gap-[20px] row-start-2 items-center">
         <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
           <h2 className="text-2xl font-semibold mb-6 text-center">
-            Create Your Profile
+            {lensAccount ? "Update Your Profile" : "Create Your Profile"}
           </h2>
+          {lensAccount && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                <strong>Existing Account:</strong>
+              </p>
+              <p className="text-sm text-gray-500">
+                Username: {lensAccount.account.username.localName}
+              </p>
+              <p className="text-sm text-gray-500">
+                Bio: {lensAccount.account.username.value}
+              </p>
+            </div>
+          )}
           <form className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -186,10 +258,10 @@ export default function Home() {
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <button
-            onClick={handleOnboard}
+            onClick={handleOnboardOrUpdate}
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-600 text-white gap-2 hover:bg-blue-700 font-medium text-sm sm:text-base h-12 px-8 sm:w-auto shadow-lg"
           >
-            Onboard with Lens
+            {lensAccount ? "Update Profile" : "Onboard with Lens"}
           </button>
         </div>
       </main>
