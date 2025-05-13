@@ -6,6 +6,7 @@ import {
   staging,
   EnvironmentConfig,
 } from "@lens-protocol/client";
+import { storage } from "../features/storage";
 
 export const environments: Record<Environments, EnvironmentConfig> = {
   [Environments.Staging]: staging,
@@ -19,4 +20,5 @@ export const client = PublicClient.create({
   environment: environments[Environments.Testnet],
   // origin: "https://lens-next-poc.vercel.app",
   apiKey: process.env.NEXT_PUBLIC_LENS_API_KEY,
+  storage: storage,
 });

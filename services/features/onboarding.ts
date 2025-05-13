@@ -8,6 +8,8 @@ import {
   LensAppAddresses,
   LensAuthRole,
 } from "@/utils/types";
+import { ApolloClient, gql, HttpLink, InMemoryCache } from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
 
 /**
  * Helper function to create a message signing function
@@ -159,7 +161,7 @@ export async function onboardUser(
       throw new Error(`Authentication failed: ${authenticated.error.message}`);
     }
 
-    const sessionClient = authenticated.value;
+    const sessionClient = authenticated;
     console.log("Authentication successful!");
     console.log("Session client:", sessionClient);
 
@@ -198,4 +200,64 @@ export async function fetchAvailableAccounts(
     console.error("Error fetching available accounts:", error);
     throw error;
   }
+}
+
+export async function authenticateChallenge(
+  challengeId: string,
+  signature: string
+) {
+  const AUTHENTICATE_MUTATION = gql`
+    mutation Authenticate($id: String!, $signature: String!) {
+      authenticate(request: { id: $id, signature: $signature }) {
+        ... on AuthenticationTokens {
+          accessToken
+          refreshToken
+          idToken
+        }
+        ... on WrongSignerError {
+          reason
+        }
+        ... on ExpiredChallengeError {
+          reason
+        }
+        ... on ForbiddenError {
+          reason
+        }
+      }
+    }
+  `;
+
+  const ENDPOINT = "https://api.testnet.lens.xyz/graphql";
+
+  const httpLink = new HttpLink({
+    uri: ENDPOINT,
+  });
+
+  const authLink = setContext((_, { headers }) => {
+    const token = localStorage.getItem("authToken");
+    return {
+      headers: {
+        ...headers,
+        authorization: token ? `Bearer ${token}` : "",
+      },
+    };
+  });
+
+  const apolloClient = new ApolloClient({
+    link: authLink.concat(httpLink),
+    cache: new InMemoryCache(),
+  });
+  const result = await apolloClient.mutate({
+    mutation: AUTHENTICATE_MUTATION,
+    variables: {
+      id: challengeId,
+      signature: signature,
+    },
+  });
+
+  if (result.errors) {
+    throw new Error(`Authentication failed: ${result.errors[0].message}`);
+  }
+
+  return result.data.authenticate;
 }
