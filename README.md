@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lens Protocol NextJS Demo
+
+This project demonstrates how to integrate the Lens Protocol into a NextJS application, allowing users to connect their wallets, authenticate with Lens Protocol, and create Lens profiles.
+
+## Features
+
+- Wallet connection using wagmi and web3modal
+- Authentication with Lens Protocol
+- Handle availability checking
+- Lens profile creation
+- Profile viewing page
+- Apollo client setup for Lens GraphQL API
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+ and npm/bun
+- MetaMask or another Web3 wallet browser extension
+
+### Environment Variables
+
+Create a `.env.local` file in the root of the project with the following variables:
+
+```
+NEXT_PUBLIC_LENS_API_KEY=your_lens_api_key_here
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You can obtain a Lens API key from the [Lens Developer Portal](https://www.lens.xyz/dev).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Clone the repository
+2. Install dependencies
+
+```bash
+bun install
+# or
+npm install
+```
+
+3. Start the development server
+
+```bash
+bun run dev
+# or
+npm run dev
+# or
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+
+## Lens Protocol Integration
+
+This demo integrates with Lens Protocol using both the Lens Client SDK and the GraphQL API:
+
+- **Authentication**: The application uses the Lens Client SDK to handle authentication.
+- **Profile Creation**: Users can create new Lens profiles with custom handles.
+- **GraphQL Queries**: The Apollo client is configured to interact with the Lens GraphQL API.
+
+## Wallet Connection
+
+The application uses wagmi and web3modal for wallet connection. Users can connect their MetaMask or other Web3 wallets to authenticate with Lens Protocol.
+
+## Pages
+
+- `/`: Home page with an introduction and links to create an account
+- `/create-account`: Page for creating a new Lens account
+- `/profile`: Page for viewing profile information
+
+## Documentation
+
+For more information about Lens Protocol, refer to the official documentation:
+
+- [Lens Protocol Authentication](https://lens.xyz/docs/protocol/authentication)
+- [Lens Protocol GraphQL API](https://lens.xyz/docs/protocol/getting-started/graphql)
+- [Creating Lens Apps](https://lens.xyz/docs/protocol/apps/create)
+- [Creating Lens Accounts](https://lens.xyz/docs/protocol/accounts/create)
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about Next.js and Lens Protocol:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Lens Protocol Documentation](https://lens.xyz/docs)
+- [Lens Protocol GitHub](https://github.com/lens-protocol)

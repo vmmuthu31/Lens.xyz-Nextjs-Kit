@@ -1,36 +1,82 @@
-import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+import {
+  ApolloClient,
+  InMemoryCache,
+  createHttpLink,
+  ApolloLink,
+  gql,
+  from,
+} from "@apollo/client";
+
+// Network	URL
+// Lens API Mainnet
+// https://api.lens.xyz/graphql
+// Lens API Testnet
+// https://api.testnet.lens.xyz/graphql
 
 const ENDPOINT = "https://api.lens.xyz/graphql";
 
-const client = new ApolloClient({
+const httpLink = createHttpLink({
   uri: ENDPOINT,
-  cache: new InMemoryCache(),
 });
 
-const { data } = await client.query({
-  query: gql`
-    query {
-      posts(request: { pageSize: TEN }) {
-        items {
+const authLink = new ApolloLink((operation, forward) => {
+  const lensAuth =
+    typeof window !== "undefined" ? localStorage.getItem("lens_auth") : null;
+  let token = null;
+
+  if (lensAuth) {
+    try {
+      const { accessToken } = JSON.parse(lensAuth);
+      token = accessToken;
+    } catch (e) {
+      console.error("Failed to parse Lens auth data", e);
+    }
+  }
+
+  operation.setContext(({ headers = {} }) => ({
+    headers: {
+      ...headers,
+      ...(token ? { "x-access-token": token } : {}),
+    },
+  }));
+
+  return forward(operation);
+});
+
+export const apolloClient = new ApolloClient({
+  link: from([authLink, httpLink]),
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: "no-cache",
+    },
+    query: {
+      fetchPolicy: "no-cache",
+    },
+  },
+});
+
+export const GET_POSTS_QUERY = gql`
+  query GetPosts($request: PostsRequest!) {
+    posts(request: $request) {
+      items {
+        id
+        author {
+          handle {
+            fullHandle
+          }
           id
-          author {
-            username {
-              value
-            }
-          }
-          metadata {
-            ... on TextOnlyMetadata {
-              content
-            }
-          }
         }
-        pageInfo {
-          prev
-          next
+        metadata {
+          ... on TextOnlyMetadata {
+            content
+          }
         }
       }
+      pageInfo {
+        prev
+        next
+      }
     }
-  `,
-});
-
-console.log(data);
+  }
+`;
